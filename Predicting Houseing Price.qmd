@@ -1,0 +1,53 @@
+---
+title: "Housing Cost Analysis"
+format: html
+editor: visual
+---
+
+```{r}
+house_data <- read.csv("C:/Users/Carlos/Downloads/kc_house_data.csv")
+head(house_data)
+
+```
+
+Linear Model that uses the predictors to predict price.
+
+Data Cleaning: Lets properly format the date column in to YY/MM/DD and rename it to date_purchased
+
+```{r}
+library(dplyr)
+#house_data$parsed_date <- as.Date(house_data$date, format = "%Y%m%dT%H%M%S")
+house_data$date <- NULL
+house_data <- house_data %>% rename(date_purchased = parsed_date)
+
+```
+
+Creating our linear model. We will use step-wise regression to remove unecessarily predictors, Ocam's Razor style.
+
+```{r}
+# Latitude and Longitute have been removed because they are dependent on eachother.
+# date_purchased has been removed since it is actually a categorical data type. 
+
+housefull_lm <- lm(price ~ sqft_living + sqft_lot + bedrooms + bathrooms + grade + floors + waterfront + view + condition + sqft_above + sqft_basement + yr_built + yr_renovated + sqft_living15 + sqft_lot15,
+   data = house_data,
+   na.action = na.omit)
+
+#summary(housefull_lm)
+
+# We will perform a stepwise regression to remove variables that don't have much of an impact on the final regression. 
+library(MASS)
+step <- stepAIC(housefull_lm, direction = "both")
+step
+```
+
+The stepwise regression removed the predictors Sqft_Lot, SqFt_Basement, and SqFt_Above.\
+This is likely because these variables are represented by the more influential sqft_living, sqft_living15, and sqft_lot15 predictors.
+
+We will incorporate a weight to records that were recently sold. Recently sold homes are reflective of the current trends more than houses sold a long time ago. We will use date_purchased to determine the weights of each record.
+
+```{r}
+library(lubridate)
+house_data$Year = year(house_data$date_purchased)
+house_data$Weight = house_data$Year - 2016
+
+```
