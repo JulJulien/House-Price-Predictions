@@ -5,24 +5,23 @@ editor: visual
 ---
 
 ```{r}
-house_data <- read.csv("C:/Users/Carlos/Downloads/kc_house_data.csv")
+house_data <- read.csv("kc_house_data.csv")
 head(house_data)
 
 ```
 
-Linear Model that uses the predictors to predict price.
-
-Data Cleaning: Lets properly format the date column in to YY/MM/DD and rename it to date_purchased
+Data Cleaning: Lets properly format the date column in to YY/MM/DD and rename it to date_purchased.\
+Then we will create a new column called year_purchases
 
 ```{r}
 library(dplyr)
-#house_data$parsed_date <- as.Date(house_data$date, format = "%Y%m%dT%H%M%S")
+house_data$date_purchased <- as.Date(house_data$date, format = "%Y%m%dT%H%M%S")
 house_data$date <- NULL
-house_data <- house_data %>% rename(date_purchased = parsed_date)
+house_data$year_purchased <- as.numeric(format(house_data$date_purchased,"%Y"))
 
 ```
 
-Creating our linear model. We will use step-wise regression to remove unecessarily predictors, Ocam's Razor style.
+Creating our linear model. We will use step-wise regression to remove necessary predictors, Ocam's Razor style.
 
 ```{r}
 # Latitude and Longitute have been removed because they are dependent on eachother.
@@ -40,14 +39,18 @@ step <- stepAIC(housefull_lm, direction = "both")
 step
 ```
 
-The stepwise regression removed the predictors Sqft_Lot, SqFt_Basement, and SqFt_Above.\
+The step-wise regression removed the predictors Sqft_Lot, SqFt_Basement, and SqFt_Above.\
 This is likely because these variables are represented by the more influential sqft_living, sqft_living15, and sqft_lot15 predictors.
 
 We will incorporate a weight to records that were recently sold. Recently sold homes are reflective of the current trends more than houses sold a long time ago. We will use date_purchased to determine the weights of each record.
 
 ```{r}
 library(lubridate)
-house_data$Year = year(house_data$date_purchased)
-house_data$Weight = house_data$Year - 2016
+min_purchase_year = min(house_data$year_purchased, na.rm = TRUE)
+max_purchase_year = max(house_data$year_purchased, na.rm = TRUE)
+
+#Because 2015 is the newest date, we can make it so that houses purchased closer to the most recent purchase weigh more than 
+house_data$Weights = house_data$year_purchased - min_purchase_year
+
 
 ```
