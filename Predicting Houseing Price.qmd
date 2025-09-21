@@ -10,7 +10,9 @@ head(house_data)
 
 ```
 
-Data Cleaning: Lets properly format the date column in to YY/MM/DD and rename it to date_purchased.\
+## Data Cleaning
+
+Lets properly format the date column in to YY/MM/DD and rename it to date_purchased.\
 Then we will create a new column called year_purchases
 
 ```{r}
@@ -18,14 +20,31 @@ library(dplyr)
 house_data$date_purchased <- as.Date(house_data$date, format = "%Y%m%dT%H%M%S")
 house_data$date <- NULL
 house_data$year_purchased <- as.numeric(format(house_data$date_purchased,"%Y"))
-
 ```
 
-Creating our linear model. We will use step-wise regression to remove necessary predictors, Ocam's Razor style.
+We will incorporate a weight to records that were recently sold. Recently sold homes are reflective of the current trends more than houses sold a long time ago. We will use date_purchased to determine the weights of each record.
+
+```{r}
+library(lubridate)
+min_purchase_year = min(house_data$year_purchased, na.rm = TRUE)
+max_purchase_year = max(house_data$year_purchased, na.rm = TRUE)
+
+#We can make more recent dates weigh more than older dates by getting the dfference between the oldest purchase and the year purchased. 
+house_data$Weights = house_data$year_purchased - min_purchase_year
+
+#This approach allows new records to scale with the weights
+```
+
+## Exploratory Data Analysis
+
+## Linear Regression Modeling
+
+We will use step-wise regression to remove necessary predictors, Ocam's Razor style.
 
 ```{r}
 # Latitude and Longitute have been removed because they are dependent on eachother.
-# date_purchased has been removed since it is actually a categorical data type. 
+# date_purchased has been removed since it is actually a categorical data type with too many classes. 
+# Zip Code is also removed since its a cateorical data type w/ too many classes.
 
 housefull_lm <- lm(price ~ sqft_living + sqft_lot + bedrooms + bathrooms + grade + floors + waterfront + view + condition + sqft_above + sqft_basement + yr_built + yr_renovated + sqft_living15 + sqft_lot15,
    data = house_data,
@@ -42,15 +61,36 @@ step
 The step-wise regression removed the predictors Sqft_Lot, SqFt_Basement, and SqFt_Above.\
 This is likely because these variables are represented by the more influential sqft_living, sqft_living15, and sqft_lot15 predictors.
 
-We will incorporate a weight to records that were recently sold. Recently sold homes are reflective of the current trends more than houses sold a long time ago. We will use date_purchased to determine the weights of each record.
+Now lets create a linear regression model, one with weights, the other without, using the predictors outputted by the step-wise regression.
 
 ```{r}
-library(lubridate)
-min_purchase_year = min(house_data$year_purchased, na.rm = TRUE)
-max_purchase_year = max(house_data$year_purchased, na.rm = TRUE)
 
-#Because 2015 is the newest date, we can make it so that houses purchased closer to the most recent purchase weigh more than 
-house_data$Weights = house_data$year_purchased - min_purchase_year
+house_linreg <- lm(price ~ sqft_living + bedrooms + bathrooms + grade + floors + waterfront + view + condition + yr_built + yr_renovated + sqft_living15 + sqft_lot15,
+   data = house_data,
+   na.action = na.omit)
 
+house_linreg_w <- lm(price ~ sqft_living + bedrooms + bathrooms + grade + floors + waterfront + view + condition + yr_built + yr_renovated + sqft_living15 + sqft_lot15,
+   data = house_data,
+   na.action = na.omit,
+   weight = Weights)
 
+round(cbind(houselm = house_linreg$coefficients,
+            houselm_w = house_linreg_w$coefficients),
+      digits = 3)
+
+```
+
+```{r}
+zip_groups <- NULL
+zip_groups <- house_data %>%
+  mutate(resid = residuals(house_linreg)) %>%
+  group_by(zipcode) %>%
+  summarize(med_resid = median(resid),
+            cnt = n()) %>%
+  arrange(med_resid) %>%
+  mutate(cum_cnt = cumsum(cnt),
+    ZipGroup = ntile(cum_cnt,5))
+
+house_data <- house_data %>%
+  left_join(select(zip_groups,zipcode, ZipGroup), by='zipcode')
 ```
