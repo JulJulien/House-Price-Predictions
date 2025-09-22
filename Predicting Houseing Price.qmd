@@ -7,10 +7,9 @@ editor: visual
 ```{r}
 house_data <- read.csv("kc_house_data.csv")
 head(house_data)
-
 ```
 
-## Data Cleaning
+# Data Cleaning
 
 Lets properly format the date column in to YY/MM/DD and rename it to date_purchased.\
 Then we will create a new column called year_purchases
@@ -29,68 +28,176 @@ library(lubridate)
 min_purchase_year = min(house_data$year_purchased, na.rm = TRUE)
 max_purchase_year = max(house_data$year_purchased, na.rm = TRUE)
 
-#We can make more recent dates weigh more than older dates by getting the dfference between the oldest purchase and the year purchased. 
-house_data$Weights = house_data$year_purchased - min_purchase_year
+#We can make more recent dates weigh more than older dates by getting the difference between the oldest purchase and the year purchased. 
+house_data$Weights = 1 + house_data$year_purchased - min_purchase_year
 
 #This approach allows new records to scale with the weights
 ```
 
-## Exploratory Data Analysis
+# Exploratory Data Analysis
 
-## Linear Regression Modeling
-
-We will use step-wise regression to remove necessary predictors, Ocam's Razor style.
+### Graph Predictors for Linearity
 
 ```{r}
-# Latitude and Longitute have been removed because they are dependent on eachother.
-# date_purchased has been removed since it is actually a categorical data type with too many classes. 
-# Zip Code is also removed since its a cateorical data type w/ too many classes.
+library(ggplot2)
 
-housefull_lm <- lm(price ~ sqft_living + sqft_lot + bedrooms + bathrooms + grade + floors + waterfront + view + condition + sqft_above + sqft_basement + yr_built + yr_renovated + sqft_living15 + sqft_lot15,
+predictors <- c("sqft_living", "sqft_lot", "bedrooms", "bathrooms", "grade", "floors", "waterfront", "view", "condition", "sqft_above", "sqft_basement", "yr_built", "yr_renovated", "sqft_living15", "sqft_lot15", "lat","long", "zipcode")
+
+for(predictor in predictors){
+  print(ggplot(house_data, aes(x = .data[[predictor]], y = price)) +
+    geom_point() +
+    geom_smooth())
+}
+```
+
+Strong Direction: Grade, Zip Group, Sqft_Living, Bedrooms, Bathrooms, condition, sqft_above, sqft_basement, sqft_living15, sqrft_lot15,
+
+idk: lat, long
+
+Little Directino: Sqft_lot, waterfront, view, yr_built, yr_renovated, zipcode
+
+# Linear Regression Modeling
+
+### Simple Linear Regression
+
+```{r}
+# Include all predictors
+lm_simple0 <- lm(price ~ sqft_living + sqft_lot + bedrooms + bathrooms + grade + floors + waterfront + view + condition + sqft_above + sqft_basement + yr_built + yr_renovated + sqft_living15 + sqft_lot15  + zipcode + lat + long,
    data = house_data,
    na.action = na.omit)
 
-#summary(housefull_lm)
+print("lm_simple0")
+AIC(lm_simple0)  # AIC Minimize
+summary(lm_simple0)$r.squared  # Regular R² Maximize
 
-# We will perform a stepwise regression to remove variables that don't have much of an impact on the final regression. 
-library(MASS)
-step <- stepAIC(housefull_lm, direction = "both")
-step
-```
 
-The step-wise regression removed the predictors Sqft_Lot, SqFt_Basement, and SqFt_Above.\
-This is likely because these variables are represented by the more influential sqft_living, sqft_living15, and sqft_lot15 predictors.
-
-Now lets create a linear regression model, one with weights, the other without, using the predictors outputted by the step-wise regression.
-
-```{r}
-
-house_linreg <- lm(price ~ sqft_living + bedrooms + bathrooms + grade + floors + waterfront + view + condition + yr_built + yr_renovated + sqft_living15 + sqft_lot15,
+# Lat and Long have been removed since they require spatial computing
+lm_simple1 <- lm(price ~ sqft_living + sqft_lot + bedrooms + bathrooms + grade + floors + waterfront + view + condition + sqft_above + sqft_basement + yr_built + yr_renovated + sqft_living15 + sqft_lot15  + zipcode,
    data = house_data,
    na.action = na.omit)
 
-house_linreg_w <- lm(price ~ sqft_living + bedrooms + bathrooms + grade + floors + waterfront + view + condition + yr_built + yr_renovated + sqft_living15 + sqft_lot15,
-   data = house_data,
-   na.action = na.omit,
-   weight = Weights)
+print("lm_simple1")
+AIC(lm_simple1)  # AIC Minimize
+summary(lm_simple1)$r.squared  # Regular R² Maximize
 
-round(cbind(houselm = house_linreg$coefficients,
-            houselm_w = house_linreg_w$coefficients),
-      digits = 3)
+
+# In this next model, I attempt to remove preditors based on the previous graphs but the AIC and Rsqr values indicate this model is less accurate. 
+
+lm_simple2 <- lm(price ~ sqft_living + bedrooms + bathrooms + grade + floors + condition + sqft_above + sqft_basement + sqft_living15 + sqft_lot15,
+   data = house_data,
+   na.action = na.omit)
+
+print("lm_simple2")
+AIC(lm_simple2)  # AIC Minimize
+summary(lm_simple2)$r.squared  # Regular R² Maximize
 
 ```
 
+### Cofounding and Correlated Variables
+
+We have multiple values that indicate location: ZipCode, Longitude, Latitude, Sqft_Living15
+
+Split the zip codes into 5 groups based on the median of the residuals from the house_linreg regression.\
+The zip groups can now be proxy variable for zip codes. Where group 1 is the least expensive area and 5 being the most expensive area.
+
 ```{r}
+library(dplyr)
 zip_groups <- NULL
 zip_groups <- house_data %>%
-  mutate(resid = residuals(house_linreg)) %>%
+  mutate(resid = residuals(lm_simple2)) %>%
   group_by(zipcode) %>%
   summarize(med_resid = median(resid),
             cnt = n()) %>%
   arrange(med_resid) %>%
   mutate(cum_cnt = cumsum(cnt),
-    ZipGroup = ntile(cum_cnt,5))
+    ZipGroup = factor(ntile(cum_cnt, 5), ordered = FALSE))
 
 house_data <- house_data %>%
-  left_join(select(zip_groups,zipcode, ZipGroup), by='zipcode')
+  left_join(dplyr::select(zip_groups,zipcode, ZipGroup), by = "zipcode")
+```
+
+Lets test if ZipGroup & SqftLiving are correlated variables
+
+```{r}
+# With the addition of ZipGroup, we can remove the zipcode predictor
+# Lat and Long have been removed since they require spacial computing.
+
+# lm_simple_zg2 includes ZipGroup as a predictor
+lm_simple_zg2 <- lm(price ~ sqft_living+ sqft_lot + bedrooms + bathrooms + grade + floors + waterfront + view + condition + sqft_above + sqft_basement + yr_built + yr_renovated + sqft_living15 + sqft_lot15 + ZipGroup,
+   data = house_data,
+   na.action = na.omit)
+
+print("lm_simple_zg2")
+AIC(lm_simple_zg2)  # AIC Minimize
+summary(lm_simple_zg2)$r.squared  # Regular R² Maximize
+
+# lm_simple_zg3 includes sqft_living and ZipGroup as correlated predictors.
+lm_simple_zg3 <- lm(price ~ sqft_living*ZipGroup + sqft_lot + bedrooms + bathrooms + grade + floors + waterfront + view + condition + sqft_above + sqft_basement + yr_built + yr_renovated + sqft_living15 + sqft_lot15,
+   data = house_data,
+   na.action = na.omit)
+
+print("lm_simple_zg3")
+AIC(lm_simple_zg3)  # AIC Minimize
+summary(lm_simple_zg3)$r.squared  # Regular R² Maximize
+```
+
+The introduction of the ZipGroup variable as a correlated variable with sqft_living improved the accuracy of the linear regression model.
+
+### Apply Weights
+
+Now lets create a linear regression model, one with weights, the other without, using the predictors outputted by the step-wise regression.
+
+```{r}
+# Lets apply weights based on the year each house was sold, with more recent sales weighing more. 
+lm_simple_zg3_w <- lm(price ~ sqft_living*ZipGroup + sqft_lot + bedrooms + bathrooms + grade + floors + waterfront + view + condition + sqft_above + sqft_basement + yr_built + yr_renovated + sqft_living15 + sqft_lot15,
+   data = house_data,
+   na.action = na.omit,
+   weights = Weights)
+
+AIC(lm_simple_zg3_w)
+summary(lm_simple_zg3_w)$r.squared  # Regular R² Maximize
+
+```
+
+We can see here that the weights actually increased our AIC from 578050 to 579325, indicating a decrease in accuracy. For this reason, we will not include this weight in our continuing linear model.
+
+### Step-wise Regression
+
+We will use step-wise regression to remove necessary predictors, Ocam's Razor style.
+
+```{r}
+# We will perform a stepwise regression to remove variables that don't have much of an impact on the final regression. 
+library(MASS)
+
+# Weighted intercept-only model
+start_model <- lm(price ~ 1, data = house_data)
+
+# Define full model scope
+upper_formula <- ~ sqft_living*ZipGroup + sqft_lot + bedrooms + bathrooms + grade + floors + waterfront + view + condition + sqft_above + sqft_basement + yr_built + yr_renovated + sqft_living15 + sqft_lot15
+
+# Stepwise selection with weights
+step_lm_wt <- stepAIC(start_model,
+                      scope = list(lower = ~1, upper = upper_formula),
+                      direction = "both",
+                      trace = TRUE)
+
+
+# Results
+step_lm_wt
+AIC(step_lm_wt)
+summary(step_lm_wt)$r.squared
+summary(step_lm_wt)$adj.r.squared
+
+```
+
+The final step-wise regression gave an AIC of 578050.8 (reduced from 579325.6). \
+The variable sqft_basement was removed.
+
+The final linear regression model is
+
+```{r}
+lm(formula = price ~ sqft_living + ZipGroup + waterfront + grade + 
+    sqft_living15 + view + yr_built + sqft_above + bedrooms + 
+    condition + floors + bathrooms + sqft_lot + yr_renovated + 
+    sqft_lot15 + sqft_living:ZipGroup, data = house_data)
 ```

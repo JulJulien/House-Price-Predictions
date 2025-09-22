@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.42">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Housing Cost Analysis</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Predicting Houseing Price_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Predicting Houseing Price_files/libs/quarto-html/quarto.js"></script>
+<script src="Predicting Houseing Price_files/libs/quarto-html/popper.min.js"></script>
+<script src="Predicting Houseing Price_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Predicting Houseing Price_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Predicting Houseing Price_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Predicting Houseing Price_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Predicting Houseing Price_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Predicting Houseing Price_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Predicting Houseing Price_files/libs/bootstrap/bootstrap-1bc8a17f135ab3d594c857e9f48e611b.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Housing Cost Analysis</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>house_data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"kc_house_data.csv"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(house_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          id            date   price bedrooms bathrooms sqft_living sqft_lot
+1 7129300520 20141013T000000  221900        3      1.00        1180     5650
+2 6414100192 20141209T000000  538000        3      2.25        2570     7242
+3 5631500400 20150225T000000  180000        2      1.00         770    10000
+4 2487200875 20141209T000000  604000        4      3.00        1960     5000
+5 1954400510 20150218T000000  510000        3      2.00        1680     8080
+6 7237550310 20140512T000000 1225000        4      4.50        5420   101930
+  floors waterfront view condition grade sqft_above sqft_basement yr_built
+1      1          0    0         3     7       1180             0     1955
+2      2          0    0         3     7       2170           400     1951
+3      1          0    0         3     6        770             0     1933
+4      1          0    0         5     7       1050           910     1965
+5      1          0    0         3     8       1680             0     1987
+6      1          0    0         3    11       3890          1530     2001
+  yr_renovated zipcode     lat     long sqft_living15 sqft_lot15
+1            0   98178 47.5112 -122.257          1340       5650
+2         1991   98125 47.7210 -122.319          1690       7639
+3            0   98028 47.7379 -122.233          2720       8062
+4            0   98136 47.5208 -122.393          1360       5000
+5            0   98074 47.6168 -122.045          1800       7503
+6            0   98053 47.6561 -122.005          4760     101930</code></pre>
+</div>
+</div>
+<section id="data-cleaning" class="level1">
+<h1>Data Cleaning</h1>
+<p>Lets properly format the date column in to YY/MM/DD and rename it to date_purchased.<br>
+Then we will create a new column called year_purchases</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>house_data<span class="sc">$</span>date_purchased <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(house_data<span class="sc">$</span>date, <span class="at">format =</span> <span class="st">"%Y%m%dT%H%M%S"</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>house_data<span class="sc">$</span>date <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>house_data<span class="sc">$</span>year_purchased <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">format</span>(house_data<span class="sc">$</span>date_purchased,<span class="st">"%Y"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We will incorporate a weight to records that were recently sold. Recently sold homes are reflective of the current trends more than houses sold a long time ago. We will use date_purchased to determine the weights of each record.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'lubridate'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    date, intersect, setdiff, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>min_purchase_year <span class="ot">=</span> <span class="fu">min</span>(house_data<span class="sc">$</span>year_purchased, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>max_purchase_year <span class="ot">=</span> <span class="fu">max</span>(house_data<span class="sc">$</span>year_purchased, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co">#We can make more recent dates weigh more than older dates by getting the difference between the oldest purchase and the year purchased. </span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>house_data<span class="sc">$</span>Weights <span class="ot">=</span> <span class="dv">1</span> <span class="sc">+</span> house_data<span class="sc">$</span>year_purchased <span class="sc">-</span> min_purchase_year</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co">#This approach allows new records to scale with the weights</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="exploratory-data-analysis" class="level1">
+<h1>Exploratory Data Analysis</h1>
+<section id="graph-predictors-for-linearity" class="level3">
+<h3 class="anchored" data-anchor-id="graph-predictors-for-linearity">Graph Predictors for Linearity</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>predictors <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"sqft_living"</span>, <span class="st">"sqft_lot"</span>, <span class="st">"bedrooms"</span>, <span class="st">"bathrooms"</span>, <span class="st">"grade"</span>, <span class="st">"floors"</span>, <span class="st">"waterfront"</span>, <span class="st">"view"</span>, <span class="st">"condition"</span>, <span class="st">"sqft_above"</span>, <span class="st">"sqft_basement"</span>, <span class="st">"yr_built"</span>, <span class="st">"yr_renovated"</span>, <span class="st">"sqft_living15"</span>, <span class="st">"sqft_lot15"</span>, <span class="st">"lat"</span>,<span class="st">"long"</span>, <span class="st">"zipcode"</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(predictor <span class="cf">in</span> predictors){</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="fu">ggplot</span>(house_data, <span class="fu">aes</span>(<span class="at">x =</span> .data[[predictor]], <span class="at">y =</span> price)) <span class="sc">+</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_smooth</span>())</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-5.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Failed to fit group -1.
+Caused by error in `smooth.construct.cr.smooth.spec()`:
+! x has insufficient unique values to support 10 knots: reduce k.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-6.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Failed to fit group -1.
+Caused by error in `smooth.construct.cr.smooth.spec()`:
+! x has insufficient unique values to support 10 knots: reduce k.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-7.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Failed to fit group -1.
+Caused by error in `smooth.construct.cr.smooth.spec()`:
+! x has insufficient unique values to support 10 knots: reduce k.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-8.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Failed to fit group -1.
+Caused by error in `smooth.construct.cr.smooth.spec()`:
+! x has insufficient unique values to support 10 knots: reduce k.</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-9.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-10.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-11.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-12.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-13.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-14.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-15.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-16.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-17.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`geom_smooth()` using method = 'gam' and formula = 'y ~ s(x, bs = "cs")'</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Predicting-Houseing-Price_files/figure-html/unnamed-chunk-4-18.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Strong Direction: Grade, Zip Group, Sqft_Living, Bedrooms, Bathrooms, condition, sqft_above, sqft_basement, sqft_living15, sqrft_lot15,</p>
+<p>idk: lat, long</p>
+<p>Little Directino: Sqft_lot, waterfront, view, yr_built, yr_renovated, zipcode</p>
+</section>
+</section>
+<section id="linear-regression-modeling" class="level1">
+<h1>Linear Regression Modeling</h1>
+<section id="simple-linear-regression" class="level3">
+<h3 class="anchored" data-anchor-id="simple-linear-regression">Simple Linear Regression</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Include all predictors</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>lm_simple0 <span class="ot">&lt;-</span> <span class="fu">lm</span>(price <span class="sc">~</span> sqft_living <span class="sc">+</span> sqft_lot <span class="sc">+</span> bedrooms <span class="sc">+</span> bathrooms <span class="sc">+</span> grade <span class="sc">+</span> floors <span class="sc">+</span> waterfront <span class="sc">+</span> view <span class="sc">+</span> condition <span class="sc">+</span> sqft_above <span class="sc">+</span> sqft_basement <span class="sc">+</span> yr_built <span class="sc">+</span> yr_renovated <span class="sc">+</span> sqft_living15 <span class="sc">+</span> sqft_lot15  <span class="sc">+</span> zipcode <span class="sc">+</span> lat <span class="sc">+</span> long,</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>   <span class="at">data =</span> house_data,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>   <span class="at">na.action =</span> na.omit)</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">"lm_simple0"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "lm_simple0"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(lm_simple0)  <span class="co"># AIC Minimize</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 589243.6</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(lm_simple0)<span class="sc">$</span>r.squared  <span class="co"># Regular R² Maximize</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.6997472</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Lat and Long have been removed since they require spatial computing</span></span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>lm_simple1 <span class="ot">&lt;-</span> <span class="fu">lm</span>(price <span class="sc">~</span> sqft_living <span class="sc">+</span> sqft_lot <span class="sc">+</span> bedrooms <span class="sc">+</span> bathrooms <span class="sc">+</span> grade <span class="sc">+</span> floors <span class="sc">+</span> waterfront <span class="sc">+</span> view <span class="sc">+</span> condition <span class="sc">+</span> sqft_above <span class="sc">+</span> sqft_basement <span class="sc">+</span> yr_built <span class="sc">+</span> yr_renovated <span class="sc">+</span> sqft_living15 <span class="sc">+</span> sqft_lot15  <span class="sc">+</span> zipcode,</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>   <span class="at">data =</span> house_data,</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>   <span class="at">na.action =</span> na.omit)</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">"lm_simple1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "lm_simple1"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(lm_simple1)  <span class="co"># AIC Minimize</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 592321.3</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(lm_simple1)<span class="sc">$</span>r.squared  <span class="co"># Regular R² Maximize</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.6537326</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># In this next model, I attempt to remove preditors based on the previous graphs but the AIC and Rsqr values indicate this model is less accurate. </span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>lm_simple2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(price <span class="sc">~</span> sqft_living <span class="sc">+</span> bedrooms <span class="sc">+</span> bathrooms <span class="sc">+</span> grade <span class="sc">+</span> floors <span class="sc">+</span> condition <span class="sc">+</span> sqft_above <span class="sc">+</span> sqft_basement <span class="sc">+</span> sqft_living15 <span class="sc">+</span> sqft_lot15,</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>   <span class="at">data =</span> house_data,</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>   <span class="at">na.action =</span> na.omit)</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">"lm_simple2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "lm_simple2"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(lm_simple2)  <span class="co"># AIC Minimize</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 597342.7</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(lm_simple2)<span class="sc">$</span>r.squared  <span class="co"># Regular R² Maximize</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.5629272</code></pre>
+</div>
+</div>
+</section>
+<section id="cofounding-and-correlated-variables" class="level3">
+<h3 class="anchored" data-anchor-id="cofounding-and-correlated-variables">Cofounding and Correlated Variables</h3>
+<p>We have multiple values that indicate location: ZipCode, Longitude, Latitude, Sqft_Living15</p>
+<p>Split the zip codes into 5 groups based on the median of the residuals from the house_linreg regression.<br>
+The zip groups can now be proxy variable for zip codes. Where group 1 is the least expensive area and 5 being the most expensive area.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>zip_groups <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>zip_groups <span class="ot">&lt;-</span> house_data <span class="sc">%&gt;%</span></span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">resid =</span> <span class="fu">residuals</span>(lm_simple2)) <span class="sc">%&gt;%</span></span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(zipcode) <span class="sc">%&gt;%</span></span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">med_resid =</span> <span class="fu">median</span>(resid),</span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">cnt =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(med_resid) <span class="sc">%&gt;%</span></span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">cum_cnt =</span> <span class="fu">cumsum</span>(cnt),</span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">ZipGroup =</span> <span class="fu">factor</span>(<span class="fu">ntile</span>(cum_cnt, <span class="dv">5</span>), <span class="at">ordered =</span> <span class="cn">FALSE</span>))</span>
+<span id="cb53-11"><a href="#cb53-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-12"><a href="#cb53-12" aria-hidden="true" tabindex="-1"></a>house_data <span class="ot">&lt;-</span> house_data <span class="sc">%&gt;%</span></span>
+<span id="cb53-13"><a href="#cb53-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(dplyr<span class="sc">::</span><span class="fu">select</span>(zip_groups,zipcode, ZipGroup), <span class="at">by =</span> <span class="st">"zipcode"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Lets test if ZipGroup &amp; SqftLiving are correlated variables</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="co"># With the addition of ZipGroup, we can remove the zipcode predictor</span></span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Lat and Long have been removed since they require spacial computing.</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a><span class="co"># lm_simple_zg2 includes ZipGroup as a predictor</span></span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>lm_simple_zg2 <span class="ot">&lt;-</span> <span class="fu">lm</span>(price <span class="sc">~</span> sqft_living<span class="sc">+</span> sqft_lot <span class="sc">+</span> bedrooms <span class="sc">+</span> bathrooms <span class="sc">+</span> grade <span class="sc">+</span> floors <span class="sc">+</span> waterfront <span class="sc">+</span> view <span class="sc">+</span> condition <span class="sc">+</span> sqft_above <span class="sc">+</span> sqft_basement <span class="sc">+</span> yr_built <span class="sc">+</span> yr_renovated <span class="sc">+</span> sqft_living15 <span class="sc">+</span> sqft_lot15 <span class="sc">+</span> ZipGroup,</span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>   <span class="at">data =</span> house_data,</span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>   <span class="at">na.action =</span> na.omit)</span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">"lm_simple_zg2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "lm_simple_zg2"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(lm_simple_zg2)  <span class="co"># AIC Minimize</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 584100.2</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(lm_simple_zg2)<span class="sc">$</span>r.squared  <span class="co"># Regular R² Maximize</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.7633556</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="co"># lm_simple_zg3 includes sqft_living and ZipGroup as correlated predictors.</span></span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>lm_simple_zg3 <span class="ot">&lt;-</span> <span class="fu">lm</span>(price <span class="sc">~</span> sqft_living<span class="sc">*</span>ZipGroup <span class="sc">+</span> sqft_lot <span class="sc">+</span> bedrooms <span class="sc">+</span> bathrooms <span class="sc">+</span> grade <span class="sc">+</span> floors <span class="sc">+</span> waterfront <span class="sc">+</span> view <span class="sc">+</span> condition <span class="sc">+</span> sqft_above <span class="sc">+</span> sqft_basement <span class="sc">+</span> yr_built <span class="sc">+</span> yr_renovated <span class="sc">+</span> sqft_living15 <span class="sc">+</span> sqft_lot15,</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>   <span class="at">data =</span> house_data,</span>
+<span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>   <span class="at">na.action =</span> na.omit)</span>
+<span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb60-6"><a href="#cb60-6" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="st">"lm_simple_zg3"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "lm_simple_zg3"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(lm_simple_zg3)  <span class="co"># AIC Minimize</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 578050.8</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(lm_simple_zg3)<span class="sc">$</span>r.squared  <span class="co"># Regular R² Maximize</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.8211961</code></pre>
+</div>
+</div>
+<p>The introduction of the ZipGroup variable as a correlated variable with sqft_living improved the accuracy of the linear regression model.</p>
+</section>
+<section id="apply-weights" class="level3">
+<h3 class="anchored" data-anchor-id="apply-weights">Apply Weights</h3>
+<p>Now lets create a linear regression model, one with weights, the other without, using the predictors outputted by the step-wise regression.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Lets apply weights based on the year each house was sold, with more recent sales weighing more. </span></span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>lm_simple_zg3_w <span class="ot">&lt;-</span> <span class="fu">lm</span>(price <span class="sc">~</span> sqft_living<span class="sc">*</span>ZipGroup <span class="sc">+</span> sqft_lot <span class="sc">+</span> bedrooms <span class="sc">+</span> bathrooms <span class="sc">+</span> grade <span class="sc">+</span> floors <span class="sc">+</span> waterfront <span class="sc">+</span> view <span class="sc">+</span> condition <span class="sc">+</span> sqft_above <span class="sc">+</span> sqft_basement <span class="sc">+</span> yr_built <span class="sc">+</span> yr_renovated <span class="sc">+</span> sqft_living15 <span class="sc">+</span> sqft_lot15,</span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a>   <span class="at">data =</span> house_data,</span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>   <span class="at">na.action =</span> na.omit,</span>
+<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>   <span class="at">weights =</span> Weights)</span>
+<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(lm_simple_zg3_w)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 579325.6</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(lm_simple_zg3_w)<span class="sc">$</span>r.squared  <span class="co"># Regular R² Maximize</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.8196391</code></pre>
+</div>
+</div>
+<p>We can see here that the weights actually increased our AIC from 578050 to 579325, indicating a decrease in accuracy. For this reason, we will not include this weight in our continuing linear model.</p>
+</section>
+<section id="step-wise-regression" class="level3">
+<h3 class="anchored" data-anchor-id="step-wise-regression">Step-wise Regression</h3>
+<p>We will use step-wise regression to remove necessary predictors, Ocam’s Razor style.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="co"># We will perform a stepwise regression to remove variables that don't have much of an impact on the final regression. </span></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MASS)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'MASS'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following object is masked from 'package:dplyr':
+
+    select</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Weighted intercept-only model</span></span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>start_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(price <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> house_data)</span>
+<span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Define full model scope</span></span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>upper_formula <span class="ot">&lt;-</span> <span class="er">~</span> sqft_living<span class="sc">*</span>ZipGroup <span class="sc">+</span> sqft_lot <span class="sc">+</span> bedrooms <span class="sc">+</span> bathrooms <span class="sc">+</span> grade <span class="sc">+</span> floors <span class="sc">+</span> waterfront <span class="sc">+</span> view <span class="sc">+</span> condition <span class="sc">+</span> sqft_above <span class="sc">+</span> sqft_basement <span class="sc">+</span> yr_built <span class="sc">+</span> yr_renovated <span class="sc">+</span> sqft_living15 <span class="sc">+</span> sqft_lot15</span>
+<span id="cb73-6"><a href="#cb73-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb73-7"><a href="#cb73-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Stepwise selection with weights</span></span>
+<span id="cb73-8"><a href="#cb73-8" aria-hidden="true" tabindex="-1"></a>step_lm_wt <span class="ot">&lt;-</span> <span class="fu">stepAIC</span>(start_model,</span>
+<span id="cb73-9"><a href="#cb73-9" aria-hidden="true" tabindex="-1"></a>                      <span class="at">scope =</span> <span class="fu">list</span>(<span class="at">lower =</span> <span class="sc">~</span><span class="dv">1</span>, <span class="at">upper =</span> upper_formula),</span>
+<span id="cb73-10"><a href="#cb73-10" aria-hidden="true" tabindex="-1"></a>                      <span class="at">direction =</span> <span class="st">"both"</span>,</span>
+<span id="cb73-11"><a href="#cb73-11" aria-hidden="true" tabindex="-1"></a>                      <span class="at">trace =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Start:  AIC=553875.8
+price ~ 1
+
+                Df  Sum of Sq        RSS    AIC
++ sqft_living    1 1.4356e+15 1.4773e+15 539204
++ grade          1 1.2976e+15 1.6153e+15 541134
++ sqft_above     1 1.0682e+15 1.8447e+15 544004
++ sqft_living15  1 9.9816e+14 1.9148e+15 544810
++ bathrooms      1 8.0329e+14 2.1096e+15 546904
++ ZipGroup       4 5.7948e+14 2.3334e+15 549090
++ view           1 4.5978e+14 2.4531e+15 550165
++ sqft_basement  1 3.0544e+14 2.6075e+15 551484
++ bedrooms       1 2.7696e+14 2.6360e+15 551718
++ waterfront     1 2.0668e+14 2.7062e+15 552287
++ floors         1 1.9209e+14 2.7208e+15 552403
++ yr_renovated   1 4.6564e+13 2.8664e+15 553529
++ sqft_lot       1 2.3417e+13 2.8895e+15 553703
++ sqft_lot15     1 1.9801e+13 2.8931e+15 553730
++ yr_built       1 8.4977e+12 2.9044e+15 553815
++ condition      1 3.8514e+12 2.9091e+15 553849
+&lt;none&gt;                        2.9129e+15 553876
+
+Step:  AIC=539203.5
+price ~ sqft_living
+
+                Df  Sum of Sq        RSS    AIC
++ ZipGroup       4 5.2766e+14 9.4962e+14 529661
++ view           1 1.2362e+14 1.3537e+15 537317
++ grade          1 1.2132e+14 1.3560e+15 537353
++ waterfront     1 1.1024e+14 1.3670e+15 537529
++ yr_built       1 9.2854e+13 1.3844e+15 537802
++ bedrooms       1 4.0635e+13 1.4366e+15 538603
++ yr_renovated   1 2.2405e+13 1.4549e+15 538875
++ sqft_living15  1 2.0109e+13 1.4572e+15 538909
++ condition      1 1.7605e+13 1.4597e+15 538946
++ sqft_lot15     1 6.4407e+12 1.4708e+15 539111
++ sqft_lot       1 3.0113e+12 1.4743e+15 539161
++ sqft_above     1 1.2165e+12 1.4761e+15 539188
++ sqft_basement  1 1.2165e+12 1.4761e+15 539188
++ floors         1 2.2991e+11 1.4770e+15 539202
++ bathrooms      1 1.4719e+11 1.4771e+15 539203
+&lt;none&gt;                        1.4773e+15 539204
+- sqft_living    1 1.4356e+15 2.9129e+15 553876
+
+Step:  AIC=529660.8
+price ~ sqft_living + ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ sqft_living:ZipGroup  4 1.7020e+14 7.7942e+14 525400
++ waterfront            1 1.0806e+14 8.4156e+14 527052
++ view                  1 8.9301e+13 8.6032e+14 527528
++ grade                 1 6.4353e+13 8.8526e+14 528146
++ sqft_living15         1 3.8376e+13 9.1124e+14 528771
++ bedrooms              1 2.3740e+13 9.2588e+14 529116
++ sqft_above            1 9.9592e+12 9.3966e+14 529435
++ sqft_basement         1 9.9592e+12 9.3966e+14 529435
++ yr_renovated          1 7.4744e+12 9.4214e+14 529492
++ condition             1 7.0178e+12 9.4260e+14 529502
++ yr_built              1 4.2727e+12 9.4534e+14 529565
++ floors                1 1.7141e+12 9.4790e+14 529624
++ sqft_lot              1 9.6732e+11 9.4865e+14 529641
++ sqft_lot15            1 1.5397e+11 9.4946e+14 529659
+&lt;none&gt;                               9.4962e+14 529661
++ bathrooms             1 2.3526e+09 9.4961e+14 529663
+- ZipGroup              4 5.2766e+14 1.4773e+15 539204
+- sqft_living           1 1.3838e+15 2.3334e+15 549090
+
+Step:  AIC=525400
+price ~ sqft_living + ZipGroup + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ waterfront            1 1.0027e+14 6.7914e+14 522426
++ view                  1 7.7951e+13 7.0147e+14 523125
++ grade                 1 7.6846e+13 7.0257e+14 523159
++ sqft_living15         1 5.8901e+13 7.2052e+14 523704
++ bedrooms              1 2.7878e+13 7.5154e+14 524615
++ sqft_above            1 1.9460e+13 7.5996e+14 524856
++ sqft_basement         1 1.9460e+13 7.5996e+14 524856
++ yr_renovated          1 4.0170e+12 7.7540e+14 525290
++ sqft_lot              1 3.4619e+12 7.7596e+14 525306
++ condition             1 2.0596e+12 7.7736e+14 525345
++ sqft_lot15            1 1.4882e+12 7.7793e+14 525361
++ yr_built              1 1.2116e+12 7.7821e+14 525368
++ floors                1 7.3934e+10 7.7934e+14 525400
+&lt;none&gt;                               7.7942e+14 525400
++ bathrooms             1 3.2429e+08 7.7942e+14 525402
+- sqft_living:ZipGroup  4 1.7020e+14 9.4962e+14 529661
+
+Step:  AIC=522425.6
+price ~ sqft_living + ZipGroup + waterfront + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ grade                 1 7.5156e+13 6.0399e+14 519893
++ sqft_living15         1 5.6093e+13 6.2305e+14 520564
++ view                  1 2.8717e+13 6.5043e+14 521494
++ sqft_above            1 2.2764e+13 6.5638e+14 521691
++ sqft_basement         1 2.2764e+13 6.5638e+14 521691
++ bedrooms              1 2.0019e+13 6.5913e+14 521781
++ sqft_lot              1 3.3049e+12 6.7584e+14 522322
++ condition             1 1.5192e+12 6.7763e+14 522379
++ yr_renovated          1 1.3353e+12 6.7781e+14 522385
++ sqft_lot15            1 1.1999e+12 6.7795e+14 522389
++ yr_built              1 2.4652e+11 6.7890e+14 522420
++ floors                1 1.3076e+11 6.7901e+14 522423
+&lt;none&gt;                               6.7914e+14 522426
++ bathrooms             1 5.0724e+10 6.7909e+14 522426
+- waterfront            1 1.0027e+14 7.7942e+14 525400
+- sqft_living:ZipGroup  4 1.6241e+14 8.4156e+14 527052
+
+Step:  AIC=519892.9
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ sqft_living15         1 2.4321e+13 5.7967e+14 519007
++ view                  1 2.4035e+13 5.7995e+14 519017
++ yr_built              1 1.8779e+13 5.8521e+14 519212
++ bedrooms              1 1.0536e+13 5.9345e+14 519515
++ condition             1 7.0726e+12 5.9692e+14 519640
++ floors                1 5.5822e+12 5.9841e+14 519694
++ sqft_above            1 4.8068e+12 5.9918e+14 519722
++ sqft_basement         1 4.8068e+12 5.9918e+14 519722
++ sqft_lot              1 3.7589e+12 6.0023e+14 519760
++ bathrooms             1 2.8364e+12 6.0115e+14 519793
++ yr_renovated          1 2.5187e+12 6.0147e+14 519805
++ sqft_lot15            1 1.5439e+12 6.0245e+14 519840
+&lt;none&gt;                               6.0399e+14 519893
+- grade                 1 7.5156e+13 6.7914e+14 522426
+- waterfront            1 9.8583e+13 7.0257e+14 523159
+- sqft_living:ZipGroup  4 1.7434e+14 7.7833e+14 525366
+
+Step:  AIC=519006.6
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living15 + 
+    sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ view                  1 1.9034e+13 5.6063e+14 518287
++ yr_built              1 1.7594e+13 5.6207e+14 518342
++ bedrooms              1 9.4431e+12 5.7023e+14 518654
++ condition             1 7.1687e+12 5.7250e+14 518740
++ floors                1 3.5768e+12 5.7609e+14 518875
++ sqft_lot              1 3.5094e+12 5.7616e+14 518877
++ yr_renovated          1 3.1688e+12 5.7650e+14 518890
++ sqft_above            1 2.8612e+12 5.7681e+14 518902
++ sqft_basement         1 2.8612e+12 5.7681e+14 518902
++ bathrooms             1 1.6621e+12 5.7801e+14 518947
++ sqft_lot15            1 8.5756e+11 5.7881e+14 518977
+&lt;none&gt;                               5.7967e+14 519007
+- sqft_living15         1 2.4321e+13 6.0399e+14 519893
+- grade                 1 4.3383e+13 6.2305e+14 520564
+- waterfront            1 9.6963e+13 6.7663e+14 522347
+- sqft_living:ZipGroup  4 1.8581e+14 7.6548e+14 525008
+
+Step:  AIC=518287
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living15 + 
+    view + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ yr_built              1 1.2744e+13 5.4789e+14 517792
++ bedrooms              1 7.7122e+12 5.5292e+14 517990
++ sqft_above            1 6.8043e+12 5.5383e+14 518025
++ sqft_basement         1 6.8043e+12 5.5383e+14 518025
++ condition             1 5.8440e+12 5.5479e+14 518063
++ sqft_lot              1 2.9299e+12 5.5770e+14 518176
++ yr_renovated          1 2.3078e+12 5.5833e+14 518200
++ floors                1 2.2593e+12 5.5838e+14 518202
++ bathrooms             1 1.2495e+12 5.5939e+14 518241
++ sqft_lot15            1 6.8682e+11 5.5995e+14 518263
+&lt;none&gt;                               5.6063e+14 518287
+- view                  1 1.9034e+13 5.7967e+14 519007
+- sqft_living15         1 1.9319e+13 5.7995e+14 519017
+- grade                 1 4.2630e+13 6.0326e+14 519869
+- waterfront            1 5.4337e+13 6.1497e+14 520284
+- sqft_living:ZipGroup  4 1.7874e+14 7.3937e+14 524260
+
+Step:  AIC=517792
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living15 + 
+    view + yr_built + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ sqft_above            1 9.8986e+12 5.3799e+14 517400
++ sqft_basement         1 9.8986e+12 5.3799e+14 517400
++ bedrooms              1 8.1060e+12 5.3978e+14 517472
++ sqft_lot              1 2.4658e+12 5.4543e+14 517697
++ condition             1 1.8394e+12 5.4605e+14 517721
++ sqft_lot15            1 5.5185e+11 5.4734e+14 517772
++ yr_renovated          1 5.2912e+11 5.4736e+14 517773
++ bathrooms             1 1.3257e+11 5.4776e+14 517789
+&lt;none&gt;                               5.4789e+14 517792
++ floors                1 7.6983e+09 5.4788e+14 517794
+- yr_built              1 1.2744e+13 5.6063e+14 518287
+- view                  1 1.4184e+13 5.6207e+14 518342
+- sqft_living15         1 1.8978e+13 5.6687e+14 518526
+- waterfront            1 5.4077e+13 6.0197e+14 519824
+- grade                 1 5.4882e+13 6.0277e+14 519853
+- sqft_living:ZipGroup  4 1.7344e+14 7.2133e+14 523728
+
+Step:  AIC=517400
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living15 + 
+    view + yr_built + sqft_above + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ bedrooms              1 7.2470e+12 5.3075e+14 517109
++ condition             1 3.0402e+12 5.3495e+14 517280
++ floors                1 2.5379e+12 5.3545e+14 517300
++ sqft_lot              1 1.8832e+12 5.3611e+14 517326
++ yr_renovated          1 3.7006e+11 5.3762e+14 517387
++ sqft_lot15            1 3.1917e+11 5.3767e+14 517389
++ bathrooms             1 2.8814e+11 5.3770e+14 517390
+&lt;none&gt;                               5.3799e+14 517400
+- sqft_above            1 9.8986e+12 5.4789e+14 517792
+- sqft_living15         1 1.5278e+13 5.5327e+14 518003
+- yr_built              1 1.5838e+13 5.5383e+14 518025
+- view                  1 1.8183e+13 5.5618e+14 518116
+- grade                 1 4.3776e+13 5.8177e+14 519089
+- waterfront            1 5.2164e+13 5.9016e+14 519398
+- sqft_living:ZipGroup  4 1.7746e+14 7.1545e+14 523553
+
+Step:  AIC=517108.9
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living15 + 
+    view + yr_built + sqft_above + bedrooms + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ condition             1 3.5482e+12 5.2720e+14 516966
++ floors                1 2.2173e+12 5.2853e+14 517020
++ sqft_lot              1 1.2881e+12 5.2946e+14 517058
++ bathrooms             1 1.2384e+12 5.2951e+14 517060
++ yr_renovated          1 3.2371e+11 5.3042e+14 517098
++ sqft_lot15            1 8.7595e+10 5.3066e+14 517107
+&lt;none&gt;                               5.3075e+14 517109
+- bedrooms              1 7.2470e+12 5.3799e+14 517400
+- sqft_above            1 9.0397e+12 5.3978e+14 517472
+- sqft_living15         1 1.4838e+13 5.4558e+14 517703
+- yr_built              1 1.6097e+13 5.4684e+14 517753
+- view                  1 1.6299e+13 5.4704e+14 517761
+- grade                 1 4.0023e+13 5.7077e+14 518678
+- waterfront            1 5.0285e+13 5.8103e+14 519063
+- sqft_living:ZipGroup  4 1.7906e+14 7.0980e+14 523384
+
+Step:  AIC=516965.9
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living15 + 
+    view + yr_built + sqft_above + bedrooms + condition + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ floors                1 1.8620e+12 5.2534e+14 516891
++ sqft_lot              1 1.2487e+12 5.2595e+14 516917
++ bathrooms             1 1.1340e+12 5.2606e+14 516921
++ yr_renovated          1 8.1312e+11 5.2638e+14 516935
++ sqft_lot15            1 6.3763e+10 5.2713e+14 516965
+&lt;none&gt;                               5.2720e+14 516966
+- condition             1 3.5482e+12 5.3075e+14 517109
+- bedrooms              1 7.7550e+12 5.3495e+14 517280
+- sqft_above            1 1.0277e+13 5.3747e+14 517381
+- yr_built              1 1.0618e+13 5.3782e+14 517395
+- sqft_living15         1 1.4810e+13 5.4201e+14 517563
+- view                  1 1.6376e+13 5.4357e+14 517625
+- grade                 1 3.9718e+13 5.6691e+14 518534
+- waterfront            1 5.0229e+13 5.7743e+14 518931
+- sqft_living:ZipGroup  4 1.7540e+14 7.0260e+14 523165
+
+Step:  AIC=516891.4
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living15 + 
+    view + yr_built + sqft_above + bedrooms + condition + floors + 
+    sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ bathrooms             1 2.1411e+12 5.2319e+14 516805
++ yr_renovated          1 1.0580e+12 5.2428e+14 516850
++ sqft_lot              1 1.0052e+12 5.2433e+14 516852
+&lt;none&gt;                               5.2534e+14 516891
++ sqft_lot15            1 1.4907e+10 5.2532e+14 516893
+- floors                1 1.8620e+12 5.2720e+14 516966
+- condition             1 3.1930e+12 5.2853e+14 517020
+- yr_built              1 6.6580e+12 5.3199e+14 517162
+- bedrooms              1 7.4211e+12 5.3276e+14 517193
+- sqft_above            1 1.2125e+13 5.3746e+14 517383
+- sqft_living15         1 1.2839e+13 5.3817e+14 517411
+- view                  1 1.6917e+13 5.4225e+14 517574
+- grade                 1 4.0905e+13 5.6624e+14 518510
+- waterfront            1 5.0523e+13 5.7586e+14 518874
+- sqft_living:ZipGroup  4 1.7120e+14 6.9653e+14 522980
+
+Step:  AIC=516805.2
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living15 + 
+    view + yr_built + sqft_above + bedrooms + condition + floors + 
+    bathrooms + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ sqft_lot              1 1.0343e+12 5.2216e+14 516764
++ yr_renovated          1 7.1110e+11 5.2248e+14 516778
+&lt;none&gt;                               5.2319e+14 516805
++ sqft_lot15            1 2.4740e+10 5.2317e+14 516806
+- bathrooms             1 2.1411e+12 5.2534e+14 516891
+- floors                1 2.8692e+12 5.2606e+14 516921
+- condition             1 2.9590e+12 5.2615e+14 516925
+- yr_built              1 8.4963e+12 5.3169e+14 517151
+- bedrooms              1 8.7708e+12 5.3196e+14 517162
+- sqft_living15         1 1.3119e+13 5.3631e+14 517338
+- sqft_above            1 1.3410e+13 5.3660e+14 517350
+- view                  1 1.6680e+13 5.3987e+14 517481
+- grade                 1 3.9327e+13 5.6252e+14 518370
+- waterfront            1 5.0427e+13 5.7362e+14 518792
+- sqft_living:ZipGroup  4 1.6946e+14 6.9266e+14 522861
+
+Step:  AIC=516764.4
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living15 + 
+    view + yr_built + sqft_above + bedrooms + condition + floors + 
+    bathrooms + sqft_lot + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ yr_renovated          1 7.0075e+11 5.2146e+14 516737
++ sqft_lot15            1 5.9265e+11 5.2157e+14 516742
+&lt;none&gt;                               5.2216e+14 516764
+- sqft_lot              1 1.0343e+12 5.2319e+14 516805
+- bathrooms             1 2.1701e+12 5.2433e+14 516852
+- floors                1 2.5769e+12 5.2474e+14 516869
+- condition             1 2.9455e+12 5.2511e+14 516884
+- bedrooms              1 8.2181e+12 5.3038e+14 517100
+- yr_built              1 8.4478e+12 5.3061e+14 517109
+- sqft_above            1 1.2653e+13 5.3481e+14 517280
+- sqft_living15         1 1.3233e+13 5.3539e+14 517303
+- view                  1 1.6328e+13 5.3849e+14 517428
+- grade                 1 3.9501e+13 5.6166e+14 518339
+- waterfront            1 5.0649e+13 5.7281e+14 518763
+- sqft_living:ZipGroup  4 1.7049e+14 6.9265e+14 522863
+
+Step:  AIC=516737.4
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living15 + 
+    view + yr_built + sqft_above + bedrooms + condition + floors + 
+    bathrooms + sqft_lot + yr_renovated + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
++ sqft_lot15            1 6.1799e+11 5.2084e+14 516714
+&lt;none&gt;                               5.2146e+14 516737
+- yr_renovated          1 7.0075e+11 5.2216e+14 516764
+- sqft_lot              1 1.0239e+12 5.2248e+14 516778
+- bathrooms             1 1.8226e+12 5.2328e+14 516811
+- floors                1 2.7169e+12 5.2418e+14 516848
+- condition             1 3.3641e+12 5.2482e+14 516874
+- yr_built              1 6.2759e+12 5.2773e+14 516994
+- bedrooms              1 8.0374e+12 5.2950e+14 517066
+- sqft_above            1 1.2670e+13 5.3413e+14 517254
+- sqft_living15         1 1.3439e+13 5.3490e+14 517285
+- view                  1 1.6162e+13 5.3762e+14 517395
+- grade                 1 3.9096e+13 5.6055e+14 518298
+- waterfront            1 4.9853e+13 5.7131e+14 518709
+- sqft_living:ZipGroup  4 1.6895e+14 6.9041e+14 522795
+
+Step:  AIC=516713.8
+price ~ sqft_living + ZipGroup + waterfront + grade + sqft_living15 + 
+    view + yr_built + sqft_above + bedrooms + condition + floors + 
+    bathrooms + sqft_lot + yr_renovated + sqft_lot15 + sqft_living:ZipGroup
+
+                       Df  Sum of Sq        RSS    AIC
+&lt;none&gt;                               5.2084e+14 516714
+- sqft_lot15            1 6.1799e+11 5.2146e+14 516737
+- yr_renovated          1 7.2609e+11 5.2157e+14 516742
+- sqft_lot              1 1.6217e+12 5.2246e+14 516779
+- bathrooms             1 1.7660e+12 5.2261e+14 516785
+- floors                1 2.8236e+12 5.2366e+14 516829
+- condition             1 3.4315e+12 5.2427e+14 516854
+- yr_built              1 6.1249e+12 5.2697e+14 516964
+- bedrooms              1 8.2253e+12 5.2907e+14 517050
+- sqft_above            1 1.2840e+13 5.3368e+14 517238
+- sqft_living15         1 1.3760e+13 5.3460e+14 517275
+- view                  1 1.6146e+13 5.3699e+14 517372
+- grade                 1 3.8681e+13 5.5952e+14 518260
+- waterfront            1 4.9958e+13 5.7080e+14 518691
+- sqft_living:ZipGroup  4 1.6848e+14 6.8933e+14 522763</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Results</span></span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>step_lm_wt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = price ~ sqft_living + ZipGroup + waterfront + grade + 
+    sqft_living15 + view + yr_built + sqft_above + bedrooms + 
+    condition + floors + bathrooms + sqft_lot + yr_renovated + 
+    sqft_lot15 + sqft_living:ZipGroup, data = house_data)
+
+Coefficients:
+          (Intercept)            sqft_living              ZipGroup2  
+            1.380e+06             -1.996e+01             -2.629e+04  
+            ZipGroup3              ZipGroup4              ZipGroup5  
+           -5.629e+04              3.223e+02             -1.696e+05  
+           waterfront                  grade          sqft_living15  
+            6.101e+05              6.735e+04              6.276e+01  
+                 view               yr_built             sqft_above  
+            4.243e+04             -8.979e+02              7.748e+01  
+             bedrooms              condition                 floors  
+           -2.701e+04              2.156e+04             -3.057e+04  
+            bathrooms               sqft_lot           yr_renovated  
+            2.155e+04              3.028e-01              1.548e+01  
+           sqft_lot15  sqft_living:ZipGroup2  sqft_living:ZipGroup3  
+           -2.854e-01              6.396e+01              1.135e+02  
+sqft_living:ZipGroup4  sqft_living:ZipGroup5  
+            1.135e+02              2.905e+02  </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(step_lm_wt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 578050.8</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb79"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(step_lm_wt)<span class="sc">$</span>r.squared</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.8211961</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(step_lm_wt)<span class="sc">$</span>adj.r.squared</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.8210139</code></pre>
+</div>
+</div>
+<p>The final step-wise regression gave an AIC of 578050.8 (reduced from 579325.6).<br>
+The variable sqft_basement was removed.</p>
+<p>The final linear regression model is</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="fu">lm</span>(<span class="at">formula =</span> price <span class="sc">~</span> sqft_living <span class="sc">+</span> ZipGroup <span class="sc">+</span> waterfront <span class="sc">+</span> grade <span class="sc">+</span> </span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>    sqft_living15 <span class="sc">+</span> view <span class="sc">+</span> yr_built <span class="sc">+</span> sqft_above <span class="sc">+</span> bedrooms <span class="sc">+</span> </span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>    condition <span class="sc">+</span> floors <span class="sc">+</span> bathrooms <span class="sc">+</span> sqft_lot <span class="sc">+</span> yr_renovated <span class="sc">+</span> </span>
+<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a>    sqft_lot15 <span class="sc">+</span> sqft_living<span class="sc">:</span>ZipGroup, <span class="at">data =</span> house_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = price ~ sqft_living + ZipGroup + waterfront + grade + 
+    sqft_living15 + view + yr_built + sqft_above + bedrooms + 
+    condition + floors + bathrooms + sqft_lot + yr_renovated + 
+    sqft_lot15 + sqft_living:ZipGroup, data = house_data)
+
+Coefficients:
+          (Intercept)            sqft_living              ZipGroup2  
+            1.380e+06             -1.996e+01             -2.629e+04  
+            ZipGroup3              ZipGroup4              ZipGroup5  
+           -5.629e+04              3.223e+02             -1.696e+05  
+           waterfront                  grade          sqft_living15  
+            6.101e+05              6.735e+04              6.276e+01  
+                 view               yr_built             sqft_above  
+            4.243e+04             -8.979e+02              7.748e+01  
+             bedrooms              condition                 floors  
+           -2.701e+04              2.156e+04             -3.057e+04  
+            bathrooms               sqft_lot           yr_renovated  
+            2.155e+04              3.028e-01              1.548e+01  
+           sqft_lot15  sqft_living:ZipGroup2  sqft_living:ZipGroup3  
+           -2.854e-01              6.396e+01              1.135e+02  
+sqft_living:ZipGroup4  sqft_living:ZipGroup5  
+            1.135e+02              2.905e+02  </code></pre>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
